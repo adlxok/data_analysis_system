@@ -7,11 +7,13 @@
       <ul>
         <li :class="{ active: currentView === 'jobList' }" @click="switchView('jobList')">职位列表</li>
         <li :class="{ active: currentView === 'dataVisualization' }" @click="switchView('dataVisualization')">数据分析</li>
+        <li :class="{ active: currentView === 'salaryPredictor' }" @click="switchView('salaryPredictor')">薪资预测</li>
       </ul>
     </nav>
     <main class="main-content">
       <JobList v-if="currentView === 'jobList'" />
       <DataVisualization v-if="currentView === 'dataVisualization'" />
+      <SalaryPredictor v-if="currentView === 'salaryPredictor'" />
     </main>
   </div>
 </template>
@@ -19,12 +21,14 @@
 <script>
 import JobList from './components/JobList.vue'
 import DataVisualization from './components/DataVisualization.vue'
+import SalaryPredictor from './components/SalaryPredictor.vue'
 
 export default {
   name: 'App',
   components: {
     JobList,
-    DataVisualization
+    DataVisualization,
+    SalaryPredictor
   },
   data() {
     return {

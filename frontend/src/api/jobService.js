@@ -9,13 +9,24 @@ const api = axios.create({
   },
 });
 
-// 获取招聘列表数据
+// 获取招聘列表数据（带分页）
 export const getJobList = async (params = {}) => {
   try {
     const response = await api.get('job_postings/', { params });
     return response.data;
   } catch (error) {
     console.error('获取招聘列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取所有招聘数据（不分页，用于数据分析）
+export const getAllJobData = async (params = {}) => {
+  try {
+    const response = await api.get('job_postings/all_data/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('获取所有招聘数据失败:', error);
     throw error;
   }
 };
@@ -31,7 +42,19 @@ export const getJobDetail = async (id) => {
   }
 };
 
+// 预测薪资
+export const predictSalary = async (jobInfo) => {
+  try {
+    const response = await api.post('job_postings/predict_salary/', jobInfo);
+    return response.data;
+  } catch (error) {
+    console.error('薪资预测失败:', error);
+    throw error;
+  }
+};
+
 export default {
   getJobList,
   getJobDetail,
+  predictSalary,
 };

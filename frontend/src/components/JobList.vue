@@ -125,14 +125,14 @@ import { getJobList } from '../api/jobService';
 export default {
   name: 'JobList',
   data() {
-    return {
-      jobs: [],
-      loading: false,
-      error: '',
-      currentPage: 1,
-      pageSize: 20,
-      totalJobs: 0,
-      jumpPage: 1,
+      return {
+        jobs: [],
+        loading: false,
+        error: '',
+        currentPage: 1,
+        pageSize: 20, // 与后端PAGE_SIZE保持一致
+        totalJobs: 0,
+        jumpPage: 1,
       searchParams: {
         job_title: '',
         company_name: '',
@@ -158,33 +158,39 @@ export default {
       this.error = '';
       
       try {
-        const params = {
-          ...this.searchParams,
-          page: this.currentPage,
-          page_size: this.pageSize,
-        };
-        
-        const data = await getJobList(params);
-        
-        // 处理响应数据
-        if (Array.isArray(data)) {
-          // 如果返回的是数组，直接使用
-          this.jobs = data;
-          this.totalJobs = data.length;
-        } else if (data.results) {
-          // 如果返回的是分页数据
-          this.jobs = data.results;
-          this.totalJobs = data.count;
-        } else {
-          this.jobs = [];
-          this.totalJobs = 0;
+          const params = {
+            ...this.searchParams,
+            page: this.currentPage,
+            page_size: this.pageSize,
+          };
+          
+          const data = await getJobList(params);
+          
+          // 处理响应数据
+          if (Array.isArray(data)) {
+            // 如果返回的是数组，直接使用
+            this.jobs = data;
+            this.totalJobs = data.length;
+          } else if (data.results) {
+            // 如果返回的是分页数据
+            this.jobs = data.results;
+            this.totalJobs = data.count; // 使用后端返回的总记录数
+            // 如果当前页码超过总页数，重置为第一页
+            if (this.currentPage > this.totalPages) {
+              this.currentPage = 1;
+              this.jumpPage = 1;
+              this.fetchJobs(); // 重新获取第一页数据
+            }
+          } else {
+            this.jobs = [];
+            this.totalJobs = 0;
+          }
+        } catch (err) {
+          this.error = '获取数据失败，请稍后重试';
+          console.error('获取招聘数据失败:', err);
+        } finally {
+          this.loading = false;
         }
-      } catch (err) {
-        this.error = '获取数据失败，请稍后重试';
-        console.error('获取招聘数据失败:', err);
-      } finally {
-        this.loading = false;
-      }
     },
     
     // 解析技能标签为数组

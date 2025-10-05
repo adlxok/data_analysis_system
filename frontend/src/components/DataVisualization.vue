@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import { getJobList } from '../api/jobService';
+import { getJobList, getAllJobData } from '../api/jobService';
 import * as echarts from 'echarts';
 import 'echarts-wordcloud'; // 导入词云组件
 import VChart from 'vue-echarts';
@@ -292,18 +292,14 @@ export default {
       this.error = '';
       
       try {
-        // 获取所有数据（设置足够大的page_size）
-        const params = {
-          page: 1,
-          page_size: 100000 // 设置为足够大的值，确保能获取所有数据进行完整可视化
-        };
+        // 使用专门的接口获取所有数据（不分页）
+        const params = {}; // 可以传递过滤参数，但不进行分页
         
-        const data = await getJobList(params);
+        const data = await getAllJobData(params);
         
+        // 由于all_data接口直接返回数组，不需要处理分页结构
         if (Array.isArray(data)) {
           this.jobs = data;
-        } else if (data.results) {
-          this.jobs = data.results;
         } else {
           this.jobs = [];
         }

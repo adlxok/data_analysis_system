@@ -3,13 +3,83 @@ from .models import JobPosting
 from .serializers import JobPostingSerializer
 import re
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, decorators, response
+from .simple_ml_model import get_simple_model
 
 class JobPostingViewSet(viewsets.ReadOnlyModelViewSet):
     """招聘信息的只读视图集"""
     queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
     
+    @decorators.action(detail=False, methods=['get'])
+    def all_data(self, request):
+        """获取所有职位数据（不分页）"""
+        # 调用get_queryset方法来应用相同的过滤逻辑
+        queryset = self.get_queryset()
+        # 序列化数据
+        serializer = self.get_serializer(queryset, many=True)
+        # 返回未分页的数据
+        return response.Response(serializer.data)
+    
+    @decorators.action(detail=False, methods=['post'])
+    def predict_salary(self, request):
+        """根据职位信息预测薪资"""
+        try:
+            # 获取请求数据
+            job_info = request.data
+            
+            # 验证必要的字段
+            required_fields = ['experience', 'education', 'location', 'company_type', 'company_size', 'industry']
+            for field in required_fields:
+                if field not in job_info or not job_info[field]:
+                    job_info[field] = 'Unknown'  # 使用默认值
+            
+            # 获取简化模型实例
+            model = get_simple_model()
+            
+            # 进行薪资预测
+            # 从job_info字典中提取各个字段作为单独参数
+            predicted_salary = model.predict_salary(
+                job_info['experience'],
+                job_info['education'],
+                job_info['location'],
+                job_info['industry']
+            )
+            
+            if predicted_salary is not None:
+                # 格式化预测结果
+                min_salary = int(predicted_salary * 0.9)  # 预测薪资范围的下限（90%）
+                max_salary = int(predicted_salary * 1.1)  # 预测薪资范围的上限（110%）
+                
+                # 格式化为友好的薪资表示
+                def format_salary(salary):
+                    if salary >= 10000:
+                        return f"{salary/10000:.1f}万"
+                    else:
+                        return f"{salary/1000:.0f}k"
+                
+                formatted_min = format_salary(min_salary)
+                formatted_max = format_salary(max_salary)
+                
+                return response.Response({
+                    'success': True,
+                    'predicted_salary': predicted_salary,
+                    'salary_range': f"{formatted_min}-{formatted_max}",
+                    'min_salary': min_salary,
+                    'max_salary': max_salary
+                })
+            else:
+                return response.Response({
+                    'success': False,
+                    'error': '无法进行薪资预测，模型可能未正确初始化'
+                }, status=500)
+                
+        except Exception as e:
+            return response.Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+        
     def get_queryset(self):
         # 可以在这里添加过滤逻辑
         queryset = super().get_queryset()

@@ -153,7 +153,7 @@ STATIC_URL = 'static/'
 # REST Framework配置
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100000  # 设置为更大的值，确保能获取数据库中的所有招聘数据进行完整可视化
+    'PAGE_SIZE': 20  # 设置合理的分页大小，实现分页功能
 }
 
 # Default primary key field type
