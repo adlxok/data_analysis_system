@@ -83,40 +83,49 @@ class JobPostingViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         # 可以在这里添加过滤逻辑
         queryset = super().get_queryset()
-        # 示例：按职位名称搜索
+        
+        # 构建Q对象用于复杂查询
+        q_objects = Q()
+        
+        # 按职位名称搜索
         job_title = self.request.query_params.get('job_title', None)
         if job_title:
-            queryset = queryset.filter(job_title__icontains=job_title)
-        # 示例：按公司名称搜索
+            q_objects &= Q(job_title__icontains=job_title)
+        
+        # 按公司名称搜索
         company_name = self.request.query_params.get('company_name', None)
         if company_name:
-            queryset = queryset.filter(company_name__icontains=company_name)
-        # 示例：按地点搜索
+            q_objects &= Q(company_name__icontains=company_name)
+        
+        # 按地点搜索
         location = self.request.query_params.get('location', None)
         if location:
-            queryset = queryset.filter(location__icontains=location)
-        # 示例：按技能搜索
+            q_objects &= Q(location__icontains=location)
+        
+        # 按技能搜索
         skills = self.request.query_params.get('skills', None)
         if skills:
-            queryset = queryset.filter(skills__icontains=skills)
+            q_objects &= Q(skills__icontains=skills)
             
         # 按学历要求搜索
         education = self.request.query_params.get('education', None)
         if education:
-            queryset = queryset.filter(education__icontains=education)
+            q_objects &= Q(education__icontains=education)
             
         # 按行业搜索
         industry = self.request.query_params.get('industry', None)
         if industry:
-            queryset = queryset.filter(industry__icontains=industry)
+            q_objects &= Q(industry__icontains=industry)
             
-        # 按最低薪资搜索
+        # 应用所有过滤条件
+        if q_objects:
+            queryset = queryset.filter(q_objects)
+            
+        # 按最低薪资搜索（单独处理，因为需要特殊逻辑解析薪资字符串）
         min_salary = self.request.query_params.get('min_salary', None)
         if min_salary:
             try:
                 min_salary = float(min_salary)
-                # 构建Q对象进行复杂查询
-                salary_queries = Q()
                 
                 # 从已过滤的queryset中获取所有职位
                 valid_job_ids = []
@@ -132,7 +141,6 @@ class JobPostingViewSet(viewsets.ReadOnlyModelViewSet):
                     if salary_matches:
                         try:
                             # 使用最低薪资数值作为比较依据
-                            # 或者取所有匹配数值的最小值
                             min_salary_value = float('inf')
                             
                             for match in salary_matches:
